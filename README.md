@@ -41,8 +41,7 @@ To better understand the methodological details for the evolutionary analyses, t
 
 * Installation of the [PHAST](http://compgen.cshl.edu/phast/) package
 
-* Local installation of a mysql server:
-  replace this line in scripts of Fig2 with your server information:  
+* Local installation of a mysql server. Replace this line in scripts of Fig2 with your server information:  
   $dbh = DBI->connect("dbi:mysql:database=username;host=HOSTNAME", "username", "password");
 
 * The following perl modules:
