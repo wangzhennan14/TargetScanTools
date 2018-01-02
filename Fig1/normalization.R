@@ -12,5 +12,5 @@ for (i in args){
 	model = lm(fc~utr5_len+utr5_gc+orf_len+orf_gc+utr3_len+utr3_gc+log10(value_1), data=g)
 	print(summary(model))
 	a$fc = a$fc-predict(model, newdata=a)
-	write.table(a, file=paste("targetsites_normalized/",miR,"_sites.out", sep=''), quote=F, row.names=F, sep="\t") #/Hmga2_study
+	write.table(a, file=paste("targetsites_normalized/",miR,"_sites.out", sep=''), quote=F, row.names=F, sep="\t")
 }

@@ -19,11 +19,12 @@ file = args[1]
 fullset = read.delim(file, colClasses=c("numeric", rep("character",2), rep("factor",5), rep("numeric",19), "character", "numeric", rep("character",2)))
 fullset = preprocessdata(fullset)
 
+head(fullset)
 ymin=-1.4
 ymax=0
 
 pdf("Fig2H.pdf")
-plot(c(0,1), c(ymin,ymax), type="n", xlab="Average top predictions considered (per miRNA)", ylab="median mRNA change",xaxt="n", yaxt="n", bty="n")
+plot(c(0,1), c(ymin,ymax), type="n", xlab="Probability of conserved targeting (Pct)", ylab="mRNA change",xaxt="n", yaxt="n", bty="n")
 xpos=seq(0,1,0.2)
 ypos=round(seq(ymin,ymax,0.2),2)
 axis(side=3,at=xpos, cex.axis=1, cex.lab=2)
@@ -39,17 +40,18 @@ for (types in list("8m","7m8","7A1")){
 	print(quantile(a$PCT, seq(0, 1, len = 6+1)))
 
 	bins=6
-	vals=data.frame(PCT=bins,FC=2)
+	vals=data.frame(PCT=0,FC=0, serr=0)
 	a=a[order(a$PCT,decreasing=T),]
 	z=0
 	for(x in seq(1,nrow(a),nrow(a)/bins)){
 		z=z+1
 		x=as.integer(x)
 		y=min(x+as.integer(nrow(a)/bins), nrow(a))
-		vals[z,]=c(mean(a[x:y,"PCT"]), mean(a[x:y,"FC"]))
+		vals[z,]=c(mean(a[x:y,"PCT"]), mean(a[x:y,"FC"]), sd(a[x:y,"FC"])/sqrt(length(a[x:y,"FC"])))
 	}
 
 	print(summary(lm(FC ~ PCT,data=a)))
 	lines(vals$PCT, vals$FC, type='p', col=cols[N], pch=16)
+	error.bar(vals$PCT, vals$FC, vals$serr, col=cols[N])
 	abline(lm(FC ~ PCT,data=vals),col=cols[N])
 }

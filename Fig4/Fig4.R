@@ -17,7 +17,7 @@ if(args[1]=='transfections'){
 } else{
 	transfections=FALSE
 	description=paste("knockouts", description, sep='-')
-	args=c("diff/miR277_medianThresh.diff","diff/miR14_medianThresh.diff","diff/miR34_Day20_medianThresh.diff")
+	args=c("diff/miR34_Day20_medianThresh.diff") #"diff/miR277_medianThresh.diff","diff/miR14_medianThresh.diff",
 }
 
 description=paste(description, whichSites, sep='-')
@@ -125,8 +125,8 @@ z=merge(diffseed,c,by=1,all.x=TRUE) #for 7/8mer targets
 c=merge(diff,c,by=1,all.x=TRUE) #for all targets
 
 if (whichSites=='6merOnly' | whichSites=='NoSite'){ c=d } #filters out mRNAs with canonical sites
-c=c[,c("GENE_ID","FC","DianaMicroTCDS","EIMMO","EMBL","MicroCosm","miRSVR","PicTar","PITA","PITAtop","RNAhybrid","RNA22","TargetSpy","TargetScan", "MinoTar", "context", "aggregate_pct")]
-z=z[,c("GENE_ID","FC","Cons","DianaMicroTCDS","EIMMO","EMBL","MicroCosm","miRSVR","PicTar","PITA","PITAtop","RNAhybrid","RNA22","TargetSpy","TargetScan", "MinoTar", "context", "aggregate_pct")]
+c=c[,c("GENE_ID","FC","ComiR","DianaMicroTCDS","EIMMO","EMBL","MicroCosm","miRSVR","PicTar","PITA","PITAtop","RNAhybrid","RNA22","TargetSpy","TargetScan", "MinoTar", "context", "aggregate_pct")]
+z=z[,c("GENE_ID","FC","Cons","ComiR","DianaMicroTCDS","EIMMO","EMBL","MicroCosm","miRSVR","PicTar","PITA","PITAtop","RNAhybrid","RNA22","TargetSpy","TargetScan", "MinoTar", "context", "aggregate_pct")]
 
 c$miRSVR=-c$miRSVR
 c$PITA=-c$PITA
@@ -137,7 +137,7 @@ c$context=-c$context
 
 pdf(paste("Fig4-", description, ".pdf", sep=''), width=8, height=10)
 par(mar=c(12, 7, 5, 5), mgp = c(5, 1, 0))
-set.seed(15)
+set.seed(30)
 crp.rg <- colorRampPalette(c("red","orange","green","cyan","blue","purple","magenta"))
 cols <- sample(crp.rg(ncol(c)-2))
 
@@ -160,14 +160,18 @@ set.seed(29)
 yvals=sapply(xpos, function(x){ quantile(sapply(1:1000, function(y) { median(sample(diff$FC,x*numDatasets)) }), c(0.025, 0.975)) }) #pooled
 polygon(c(xpos, rev(xpos)), c(yvals[1,], rev(yvals[2,])), col="lightgrey",border=F)
 abline(h = 0)
-set.seed(29)
+set.seed(80)
 plotchar <- sample(c(15:18,22:25), ncol(c)-2, replace=T)
 c[,1]=as.factor(unlist(strsplit(as.character(c[,1]),'\\|'))[seq(2,nrow(c)*2,2)]) #by miRNA
 
+allfcs = list()
 for (N in 3:(ncol(c))){
 	if(sum(!is.na(c[,N])) > 10){
 		xvals=4^seq(1,min((sum(!is.na(c[,N]))/numDatasets)^(1/4),6),0.5)
 		say(colnames(c)[N], sum(!is.na(c[,N])))
+		fcs=lapply(xvals, function(x){ unlist(by(c[,c(2,N)],c[,1],function(y){
+			y[order(y[,2],decreasing=T)[1:x],1]
+		})) } ) #compute mean of mean by miRNA
 		if(median){
 			yvals=sapply(xvals, function(x){ mean(unlist(by(c[,c(2,N)],c[,1],function(y){ 
 				if(is.na(y[order(y[,2],decreasing=T)[1],2])){ NA; }
@@ -179,11 +183,14 @@ for (N in 3:(ncol(c))){
 				else { mean(y[order(y[,2],decreasing=T)[1:x],1]); }
 			})), na.rm=T) } ) #compute mean of mean by miRNA
 		}
+		allfcs[[colnames(c)[N]]]=fcs
 		lines(xvals, yvals, type='l', col=cols[N-2])
 		lines(xvals, yvals, type='p', col=cols[N-2], pch=plotchar[N-2])
 	}
 }
 legend("bottomright", colnames(c[3:(ncol(c))]), bg="white", text.col=cols, col = cols, pch=plotchar, lty = c(1, 1), lwd=c(1,1), cex=0.9, bty="n",ncol=2)
+
+head(allfcs[['ComiR']])
 
 #plot mean of mean/median for subset of mRNAs with 7/8mer sites
 nrow(z)/numDatasets

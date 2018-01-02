@@ -38,7 +38,6 @@
 
 ### find predictions from other algorithms, extract contents of gzipped tarball:
 # tar xvvzf pred.tar.gz
-feature_table_knockouts_shortestUTR.txt
 ### modify commented lines in this script to accomodate knockouts vs transfection predictions summary
 # Rscript combine_all_predictions.R pred/*
 
