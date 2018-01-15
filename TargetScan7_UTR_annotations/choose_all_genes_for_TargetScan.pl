@@ -2,7 +2,7 @@
 
 use allfxns;
 
-$file = "dmel-all-no-analysis-r6.18.gff.gz";
+$file = "dmel-all-no-analysis-r6.19.gff.gz";
 
 #map transcript IDs to gene IDs
 open IN, "zgrep -P '\tmRNA\t' $file | sort -k1,1 -k4,4n | ";
@@ -51,7 +51,7 @@ while(<IN>){
 }
 close IN;
 	
-open IN, "zcat lai_2017_3utr_ends.gff | ";
+open IN, "<lai_2017_3utr_ends.gff";
 while(<IN>){
 	($chr, $start, $str) = (split /\t/)[0,3,6];
 	$chr = substr($chr,3);
@@ -159,13 +159,13 @@ close IN;
 #if not most distal 3' UTR but overlaps last exon, extend it to most distal FlyBase or Lai 3' UTR annotations
 #if not most distal 3' UTR but doesn't overlap last exon, search for 3' UTR within the intron using mapped 3'seq reads from Lai et al and our study
 open IN, "zgrep -P '\tfive_prime_UTR|three_prime_UTR|CDS\t' $file | ";
-while(<IN>){
-	($chr, $region, $start, $stop, $str, $last) = (split /\t/)[0,2,3,4,6,-1];
+while($line = <IN>){
+	($chr, $region, $start, $stop, $str, $last) = (split /\t/, $line)[0,2,3,4,6,-1];
 	($id) = ($last =~ /Parent=(FBtr.*)/);
 	@ids = split /,/, $id;
 	foreach $id (@ids){
 		if ($okids{$id}){
-			@a = split /\t/, $_;
+			@a = split /\t/, $line;
 			$a[3] -= 1; #convert to 0-based coordinate system
 			$a[4] -= 1; #convert to 0-based coordinate system
 			$a[-1] = $id.':'.$id2parent{$id};
@@ -194,4 +194,4 @@ sub findUTR{
 	if ($str eq '+'){ for($i = $searchpos+1; $i <= $lastpos; ++$i){ last if ($exonpos{$chr}{$i}{$str}); $mypos = $i if ($tagcounts{$chr}{$i}{$str} >= 10 || $i == $lastpos) && $i > $mypos; } } #last if hit start of any other exon $stopcodon+(2200+$intronlen3pUTR{$id})
 	else{ 		for($i = $searchpos-1; $i >= $lastpos; --$i){ last if ($exonpos{$chr}{$i}{$str}); $mypos = $i if ($tagcounts{$chr}{$i}{$str} >= 10 || $i == $lastpos) && $i < $mypos; } } #$stopcodon-(2200+$intronlen3pUTR{$id})
 	return $mypos;
-}
+}v
