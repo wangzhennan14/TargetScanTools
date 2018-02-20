@@ -17,7 +17,7 @@ if(args[1]=='transfections'){
 } else{
 	transfections=FALSE
 	description=paste("knockouts", description, sep='-')
-	args=c("diff/miR34_Day20_medianThresh.diff") #"diff/miR277_medianThresh.diff","diff/miR14_medianThresh.diff",
+	args=c("diff/miR277_medianThresh.diff","diff/miR14_medianThresh.diff","diff/miR34_Day20_medianThresh.diff")
 }
 
 description=paste(description, whichSites, sep='-')
@@ -165,32 +165,47 @@ plotchar <- sample(c(15:18,22:25), ncol(c)-2, replace=T)
 c[,1]=as.factor(unlist(strsplit(as.character(c[,1]),'\\|'))[seq(2,nrow(c)*2,2)]) #by miRNA
 
 allfcs = list()
+yvals = list()
 for (N in 3:(ncol(c))){
 	if(sum(!is.na(c[,N])) > 10){
 		xvals=4^seq(1,min((sum(!is.na(c[,N]))/numDatasets)^(1/4),6),0.5)
 		say(colnames(c)[N], sum(!is.na(c[,N])))
-		fcs=lapply(xvals, function(x){ unlist(by(c[,c(2,N)],c[,1],function(y){
+		allfcs[[colnames(c)[N]]] = lapply(xvals, function(x){ unlist(by(c[,c(2,N)],c[,1],function(y){
 			y[order(y[,2],decreasing=T)[1:x],1]
-		})) } ) #compute mean of mean by miRNA
+		})) } ) #save fold changes for given threshold into a list of lists
 		if(median){
-			yvals=sapply(xvals, function(x){ mean(unlist(by(c[,c(2,N)],c[,1],function(y){ 
+			yvals[[colnames(c)[N]]]=sapply(xvals, function(x){ mean(unlist(by(c[,c(2,N)],c[,1],function(y){ 
 				if(is.na(y[order(y[,2],decreasing=T)[1],2])){ NA; }
 				else { median(y[order(y[,2],decreasing=T)[1:x],1]); }
 			})), na.rm=T) } ) #compute mean of median by miRNA
 		} else{
-			yvals=sapply(xvals, function(x){ mean(unlist(by(c[,c(2,N)],c[,1],function(y){ 
+			yvals[[colnames(c)[N]]]=sapply(xvals, function(x){ mean(unlist(by(c[,c(2,N)],c[,1],function(y){ 
 				if(is.na(y[order(y[,2],decreasing=T)[1],2])){ NA; }
 				else { mean(y[order(y[,2],decreasing=T)[1:x],1]); }
 			})), na.rm=T) } ) #compute mean of mean by miRNA
 		}
-		allfcs[[colnames(c)[N]]]=fcs
-		lines(xvals, yvals, type='l', col=cols[N-2])
-		lines(xvals, yvals, type='p', col=cols[N-2], pch=plotchar[N-2])
+		lines(xvals, yvals[[colnames(c)[N]]], type='l', col=cols[N-2])
+		lines(xvals, yvals[[colnames(c)[N]]], type='p', col=cols[N-2], pch=plotchar[N-2])
 	}
 }
 legend("bottomright", colnames(c[3:(ncol(c))]), bg="white", text.col=cols, col = cols, pch=plotchar, lty = c(1, 1), lwd=c(1,1), cex=0.9, bty="n",ncol=2)
 
-head(allfcs[['ComiR']])
+if (whichSites!='NoSite'){ 
+	xvals=4^seq(1,6,0.5)
+	algnames = names(yvals)
+	sapply(1:length(yvals[['context']]), function(x){
+		valsAtThresh = c()
+		for (name in names(yvals)) {
+			valsAtThresh = c(valsAtThresh, yvals[[name]][x])
+		}
+		say(x, algnames[rank(valsAtThresh)==2])
+		if(transfections){
+			if(wilcox.test(unlist(allfcs[["context"]][x]), unlist(allfcs[[algnames[rank(valsAtThresh)==2]]][[x]]), alternative="less")$p.value < 0.05) text(xvals[x], yvals[['context']][x]-0.05, '*')
+		} else{
+			if(wilcox.test(unlist(allfcs[["context"]][x]), unlist(allfcs[[algnames[rank(-1*valsAtThresh)==2]]][[x]]), alternative="greater")$p.value < 0.05) text(xvals[x], yvals[['context']][x]+0.05, '*')
+		}
+	})
+}
 
 #plot mean of mean/median for subset of mRNAs with 7/8mer sites
 nrow(z)/numDatasets
