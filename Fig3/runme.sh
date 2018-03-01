@@ -41,6 +41,6 @@ Rscript Fig3D.R plfold_35x30_sitetypes.stats
 
 #./Table1_fraction_features_chosen.pl >Table1_chosenFraction.txt
 
-Rscript Fig3-S1.R
+Rscript FigS3.R
 
 Rscript Fig3E.R
